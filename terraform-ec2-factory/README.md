@@ -1,33 +1,82 @@
 # Terraform EC2 Factory
 
-A robust, enterprise-grade Terraform framework for provisioning custom EC2 instances on AWS.
+A robust, enterprise-grade Terraform framework for provisioning custom EC2 instances on AWS with safety safeguards to prevent accidental infrastructure destruction.
 
-## Features
+---
+
+## 📋 Features
 
 - Uses a reusable internal `ec2` module.
 - Driven entirely by configuration maps defined in `.tfvars` files.
 - **Dynamic Security**: Automatically generates a unique SSH Key Pair, Security Group, and IAM Role per instance.
 - **Automated Keys**: Automatically downloads and saves the `.pem` SSH private key directly into your workspace.
-- **Custom Naming**: Allows you to explicitly define names for your Server, Security Group, IAM Role, and Key Pair.
-- Automatically handles dynamic User Data injection via local shell scripts.
+- **Accidental Destroy Safeguard**: Integrates `prevent_destroy = true` on critical infrastructure components (such as the Security Group) to prevent unintended teardowns.
 
-## Usage Guide
+---
 
-### 1. Configure your Servers
+## 🛠️ Prerequisites & Installation
 
-Open the `tfvars/inputs.auto.tfvars` file and define your instances in the `servers` map.
+To run this repository locally, you need to install both the **AWS CLI** and **Terraform**.
+
+### 1. Install AWS CLI (Linux / Debian / Ubuntu)
+```bash
+# Download the installation zip file
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+# Unzip the package (install unzip first if you don't have it: sudo apt install unzip)
+unzip awscliv2.zip
+
+# Run the installer
+sudo ./aws/install
+
+# Verify the installation
+aws --version
+```
+
+### 2. Install Terraform (Ubuntu / Debian)
+```bash
+# Ensure system is up to date and install gnupg/software-properties-common
+sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+
+# Install the HashiCorp GPG key
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+
+# Add the official HashiCorp Linux repository
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+# Update package lists and install Terraform
+sudo apt-get update && sudo apt-get install terraform
+
+# Verify the installation
+terraform -version
+```
+
+### 3. Configure AWS CLI Credentials
+Before deploying, authenticate your terminal with your AWS account credentials:
+```bash
+aws configure
+```
+You will be prompted for your **AWS Access Key ID**, **AWS Secret Access Key**, and **Default region name** (e.g., `ap-south-1`).
+
+---
+
+## 🚀 Usage & Deployment Guide
+
+### 1. Define Your Servers
+Open `tfvars/inputs.auto.tfvars` and add/configure instances under the `servers` map. Make sure you set a `username` if you want a custom OS user created:
 
 ```terraform
 servers = {
   "web-server-01" = {
-    ami            = "ami-0e38835daf6b8a2b9"
+    ami            = "ami-006f82a1d5a27da54"
     instance_type  = "t3.medium"
     subnet_id      = "subnet-01962d22801ff2bf6"
     volume_size    = 50
+    volume_type    = "gp3"
     user_data_file = "userdata/web_server.sh"
+    username       = "deployer"  # Custom username
     
-    # Custom Naming (Optional)
-    server_name    = "custom-web-server"
+    server_name    = "custom-web-server-name"
     sg_name        = "custom-web-sg"
     iam_role_name  = "custom-web-role"
     key_pair_name  = "custom-web-key"
@@ -35,69 +84,79 @@ servers = {
 }
 ```
 
-### 2. Deploy the Infrastructure
-
-Because your variables file is located inside a subdirectory (`tfvars/`), you **must** explicitly pass the `-var-file` flag with your Terraform commands.
-
-Initialize the working directory:
+### 2. Deploy Everything
+Initialize Terraform and apply the configurations:
 ```bash
+# Initialize and fetch modules
 terraform init -upgrade
+
+# Run apply (this will prompt you dynamically for the OS user password)
+terraform apply -var-file=tfvars/inputs.auto.tfvars
 ```
 
-Preview the changes:
+If you wish to auto-approve the execution plan and pass a pre-defined password:
 ```bash
-terraform plan -var-file="tfvars/inputs.auto.tfvars"
+terraform apply -var-file=tfvars/inputs.auto.tfvars -var="user_password=your_secure_password" --auto-approve
 ```
 
-Apply the changes to deploy:
-```bash
-terraform apply -var-file="tfvars/inputs.auto.tfvars" --auto-approve
-```
+---
 
-### 3. Connect to your Instance
+## 🛑 How to Destroy Resources
 
-Once the deployment completes, Terraform will automatically save your private key in the root directory (e.g., `./custom-web-key.pem`) and output the public IP of the instance.
+Because this architecture enforces `prevent_destroy = true` on the Security Group, you must follow specific strategies based on what you want to destroy.
 
-Connect using SSH:
-```bash
-ssh -i ./custom-web-key.pem ubuntu@<PUBLIC_IP_FROM_OUTPUT>
-```
-*(Note: Use `ubuntu` for Ubuntu AMIs, `ec2-user` for Amazon Linux, or `admin` for Debian)*
+> [!IMPORTANT]
+> **Why does `terraform destroy` fail by default?**
+> The `aws_security_group` has a lifecycle safety block `prevent_destroy = true` enabled. Attempting a standard `terraform destroy` will exit with an error to protect this resource.
 
-## Directory Structure
+---
 
-- `main.tf`, `variables.tf`, `outputs.tf`: Root module configuration.
-- `modules/ec2`: The reusable EC2 instance module.
-- `userdata/`: Store your bash scripts here for user data injection.
-- `tfvars/`: Store your environment specific variable files here.
+### Scenario A: Destroy only the EC2 Instance (Keep Security Group)
+If you want to terminate the EC2 instance, delete the IAM Roles, and clean up SSH keys, but **keep the Security Group active in AWS**, run these commands:
 
-## Developer Onboarding Guide
+1. **Remove the Security Group from Terraform's Tracking:**
+   This removes the group from your local state file. It stays alive in AWS, but Terraform will no longer attempt to destroy it.
+   ```bash
+   terraform state rm 'module.ec2["web-server-01"].aws_security_group.this[0]'
+   ```
 
-Welcome! You can use this repository to easily request an EC2 instance. You do not need to know how to write Terraform.
+2. **Update the Configuration File:**
+   Open `tfvars/inputs.auto.tfvars` and remove the server from the `servers` map (setting it to `servers = {}`).
 
-### Local Prerequisites
+3. **Apply the Changes:**
+   Execute apply. Since the server is removed from the configuration, Terraform will destroy the EC2 instance, SSH keys, and IAM roles, leaving the Security Group untouched in AWS.
+   ```bash
+   terraform apply -var-file=tfvars/inputs.auto.tfvars -var="user_password=dummy" --auto-approve
+   ```
 
-Before you begin, ensure you have the necessary tools installed and configured:
+---
 
-1. **Install Terraform**: Download and install [Terraform](https://developer.hashicorp.com/terraform/install).
-2. **Install AWS CLI**: Download and install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-3. **Configure AWS Credentials**: Log in using your enterprise SSO or run `aws configure`.
+### Scenario B: Destroy only the Security Group (Keep Instance)
+> [!WARNING]
+> In AWS, you cannot delete a Security Group that is actively attached to a running EC2 instance. 
 
-Verify your installation:
-```bash
-terraform version
-aws sts get-caller-identity
-```
+If you want to disassociate the Security Group and delete it but keep the instance:
+1. **Remove the Security Group from state tracking** so Terraform ignores it:
+   ```bash
+   terraform state rm 'module.ec2["web-server-01"].aws_security_group.this[0]'
+   ```
+2. Manually log into your AWS Console (or use AWS CLI) to detach it from the running EC2 instance and delete the group.
 
-### Deployment Workflow
+---
 
-**To request a new instance:**
+### Scenario C: Destroy EVERYTHING (Instance + Security Group)
+To completely wipe out all infrastructure including the Security Group:
 
-1. Open the file: `tfvars/inputs.auto.tfvars`
-2. You will see a `servers = { ... }` block. Copy an existing server block and paste it below, giving it a unique name (e.g., `"my-new-server"`).
-3. Update the `ami`, `instance_type`, and `subnet_id` to match what you need.
-4. If your server needs a startup script, put your script inside the `userdata/` folder and add `user_data_file = "userdata/your_script.sh"` to your block.
-5. In your terminal, run: `terraform plan -var-file="tfvars/inputs.auto.tfvars"`.
-6. If it looks good, run: `terraform apply -var-file="tfvars/inputs.auto.tfvars"`.
+1. **Temporarily Disable the Safety Safeguard:**
+   Open `modules/ec2/main.tf` and find the `aws_security_group` resource (around line 66). Change the lifecycle attribute from `true` to `false`:
+   ```terraform
+   lifecycle {
+     prevent_destroy = false
+   }
+   ```
 
-Once finished, Terraform will automatically download your `.pem` SSH key into the main folder and print your Server IP on the screen so you can log in immediately.
+2. **Execute Destroy:**
+   Run the destroy command, passing the variables file:
+   ```bash
+   terraform destroy -var-file=tfvars/inputs.auto.tfvars -var="user_password=dummy" --auto-approve
+   ```

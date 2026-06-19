@@ -13,11 +13,11 @@ variable "default_tags" {
 variable "servers" {
   description = "Map of server configurations to provision"
   type = map(object({
-    ami            = string
-    instance_type  = string
-    subnet_id      = string
-    volume_size    = optional(number, 20)
-    volume_type    = optional(string, "gp3")
+    ami                         = string
+    instance_type               = string
+    subnet_id                   = string
+    volume_size                 = optional(number, 20)
+    volume_type                 = optional(string, "gp3")
     user_data_file              = optional(string)
     username                    = optional(string)
     create_security_group       = optional(bool, true)
@@ -28,7 +28,6 @@ variable "servers" {
     key_pair_name               = optional(string)
     tags                        = optional(map(string), {})
   }))
-  default = {}
 
   validation {
     condition = alltrue([

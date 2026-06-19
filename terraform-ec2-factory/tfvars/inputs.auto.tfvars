@@ -13,6 +13,7 @@ servers = {
     volume_size    = 50
     volume_type    = "gp3"
     user_data_file = "userdata/web_server.sh"
+    username       = "deployer"
     server_name    = "custom-web-server-name"
     sg_name        = "custom-web-sg"
     iam_role_name  = "custom-web-role"

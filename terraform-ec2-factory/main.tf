@@ -41,14 +41,14 @@ module "ec2" {
   volume_size   = each.value.volume_size
   volume_type   = each.value.volume_type
   user_data     = local.user_data_contents[each.key]
-  
+
   server_name   = coalesce(each.value.server_name, each.key)
   sg_name       = coalesce(each.value.sg_name, "${each.key}-sg")
   iam_role_name = coalesce(each.value.iam_role_name, "${each.key}-role")
   key_pair_name = coalesce(each.value.key_pair_name, "${each.key}-key")
-  
+
   create_security_group       = length(each.value.existing_security_group_ids) == 0 ? true : false
   existing_security_group_ids = each.value.existing_security_group_ids
-  
-  tags          = each.value.tags
+
+  tags = each.value.tags
 }

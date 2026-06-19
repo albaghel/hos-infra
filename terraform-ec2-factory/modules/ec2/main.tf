@@ -62,6 +62,10 @@ resource "aws_security_group" "this" {
     { "Name" = var.sg_name },
     var.tags
   )
+
+  lifecycle {
+    prevent_destroy = false
+  }
 }
 
 # --- IAM Role & Profile ---
@@ -89,16 +93,16 @@ resource "aws_iam_instance_profile" "this" {
 
 # --- EC2 Instance ---
 resource "aws_instance" "server" {
-  ami                    = var.ami
-  instance_type          = var.instance_type
-  subnet_id              = var.subnet_id
+  ami           = var.ami
+  instance_type = var.instance_type
+  subnet_id     = var.subnet_id
   vpc_security_group_ids = concat(
     var.create_security_group ? [aws_security_group.this[0].id] : [],
     var.existing_security_group_ids
   )
-  key_name               = aws_key_pair.this.key_name
-  iam_instance_profile   = aws_iam_instance_profile.this.name
-  user_data              = var.user_data
+  key_name             = aws_key_pair.this.key_name
+  iam_instance_profile = aws_iam_instance_profile.this.name
+  user_data            = var.user_data
 
   root_block_device {
     volume_size = var.volume_size
