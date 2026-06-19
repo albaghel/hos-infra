@@ -1,13 +1,12 @@
 #!/bin/bash
 echo "Starting user data script execution..."
-apt-get update -y
-apt-get full-upgrade -y
-apt-get autoremove -y
+sudo apt-get update -y
+sudo apt-get full-upgrade -y
+sudo apt-get autoremove -y
 
-apt-get install -y nginx docker.io
-systemctl start nginx
-systemctl enable nginx
+sudo apt-get install -y nginx docker.io
+sudo systemctl start nginx
+sudo systemctl enable nginx
 
-systemctl start docker
-systemctl enable docker
-
+sudo systemctl start docker
+sudo systemctl enable docker
