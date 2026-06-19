@@ -170,4 +170,3 @@ To completely wipe out all infrastructure including the Security Group:
 6. If it looks good, run: `terraform apply -var-file="tfvars/inputs.auto.tfvars"`. You will be prompted for the password again to confirm the deployment.
 
 Once finished, Terraform will automatically download your `.pem` SSH key into the main folder and print your Server IP on the screen. If you specified a custom `username`, you can now SSH into the instance using either your `.pem` key or the password you provided!
->>>>>>> 0e424d7 (fix readne)
