@@ -147,6 +147,7 @@ If you want to disassociate the Security Group and delete it but keep the instan
 ### Scenario C: Destroy EVERYTHING (Instance + Security Group)
 To completely wipe out all infrastructure including the Security Group:
 
+
 1. **Temporarily Disable the Safety Safeguard:**
    Open `modules/ec2/main.tf` and find the `aws_security_group` resource (around line 66). Change the lifecycle attribute from `true` to `false`:
    ```terraform
@@ -160,3 +161,13 @@ To completely wipe out all infrastructure including the Security Group:
    ```bash
    terraform destroy -var-file=tfvars/inputs.auto.tfvars -var="user_password=dummy" --auto-approve
    ```
+
+1. Open the file: `tfvars/inputs.auto.tfvars`
+2. You will see a `servers = { ... }` block. Copy an existing server block and paste it below, giving it a unique name (e.g., `"my-new-server"`).
+3. Update the `ami`, `instance_type`, and `subnet_id` to match what you need.
+4. If your server needs a startup script, put your script inside the `userdata/` folder and add `user_data_file = "userdata/your_script.sh"` to your block.
+5. In your terminal, run: `terraform plan -var-file="tfvars/inputs.auto.tfvars"`. Terraform will halt and prompt you for a `user_password`. Type the password you want for your custom user.
+6. If it looks good, run: `terraform apply -var-file="tfvars/inputs.auto.tfvars"`. You will be prompted for the password again to confirm the deployment.
+
+Once finished, Terraform will automatically download your `.pem` SSH key into the main folder and print your Server IP on the screen. If you specified a custom `username`, you can now SSH into the instance using either your `.pem` key or the password you provided!
+>>>>>>> 0e424d7 (fix readne)
