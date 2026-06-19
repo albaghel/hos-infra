@@ -37,3 +37,9 @@ variable "servers" {
     error_message = "The volume_type must be one of: gp2, gp3, io1, io2, standard."
   }
 }
+
+variable "user_password" {
+  description = "The password to set for the newly created OS users"
+  type        = string
+  sensitive   = true
+}

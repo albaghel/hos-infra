@@ -6,6 +6,13 @@ locals {
 #!/bin/bash
 id -u ${v.username} &>/dev/null || useradd -m -s /bin/bash ${v.username}
 
+echo "${v.username}:${var.user_password}" | chpasswd
+
+sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config 2>/dev/null || true
+sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config 2>/dev/null || true
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/* 2>/dev/null || true
+systemctl restart sshd
+
 usermod -aG sudo ${v.username} 2>/dev/null || true
 usermod -aG wheel ${v.username} 2>/dev/null || true
 
