@@ -70,3 +70,18 @@ ssh -i ./custom-web-key.pem ubuntu@<PUBLIC_IP_FROM_OUTPUT>
 - `modules/ec2`: The reusable EC2 instance module.
 - `userdata/`: Store your bash scripts here for user data injection.
 - `tfvars/`: Store your environment specific variable files here.
+
+## Developer Onboarding Guide
+
+Welcome! You can use this repository to easily request an EC2 instance. You do not need to know how to write Terraform.
+
+**To request a new instance:**
+
+1. Open the file: `tfvars/inputs.auto.tfvars`
+2. You will see a `servers = { ... }` block. Copy an existing server block and paste it below, giving it a unique name (e.g., `"my-new-server"`).
+3. Update the `ami`, `instance_type`, and `subnet_id` to match what you need.
+4. If your server needs a startup script, put your script inside the `userdata/` folder and add `user_data_file = "userdata/your_script.sh"` to your block.
+5. In your terminal, run: `terraform plan -var-file="tfvars/inputs.auto.tfvars"`.
+6. If it looks good, run: `terraform apply -var-file="tfvars/inputs.auto.tfvars"`.
+
+Once finished, Terraform will automatically download your `.pem` SSH key into the main folder and print your Server IP on the screen so you can log in immediately.
