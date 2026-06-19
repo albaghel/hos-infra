@@ -22,6 +22,7 @@ resource "local_sensitive_file" "private_key" {
 
 # --- Security Group ---
 resource "aws_security_group" "this" {
+  count       = var.create_security_group ? 1 : 0
   name        = var.sg_name
   description = "Security group for ${var.server_name} (HTTP, HTTPS, SSH)"
   vpc_id      = data.aws_subnet.selected.vpc_id
@@ -91,7 +92,10 @@ resource "aws_instance" "server" {
   ami                    = var.ami
   instance_type          = var.instance_type
   subnet_id              = var.subnet_id
-  vpc_security_group_ids = [aws_security_group.this.id]
+  vpc_security_group_ids = concat(
+    var.create_security_group ? [aws_security_group.this[0].id] : [],
+    var.existing_security_group_ids
+  )
   key_name               = aws_key_pair.this.key_name
   iam_instance_profile   = aws_iam_instance_profile.this.name
   user_data              = var.user_data
@@ -110,4 +114,9 @@ resource "aws_instance" "server" {
   lifecycle {
     ignore_changes = [user_data]
   }
+}
+
+moved {
+  from = aws_security_group.this
+  to   = aws_security_group.this[0]
 }

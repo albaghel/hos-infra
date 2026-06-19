@@ -56,3 +56,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "create_security_group" {
+  description = "Whether to create a new security group"
+  type        = bool
+  default     = true
+}
+
+variable "existing_security_group_ids" {
+  description = "List of existing security group IDs to attach"
+  type        = list(string)
+  default     = []
+}

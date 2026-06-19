@@ -18,12 +18,15 @@ variable "servers" {
     subnet_id      = string
     volume_size    = optional(number, 20)
     volume_type    = optional(string, "gp3")
-    user_data_file = optional(string)
-    server_name    = optional(string)
-    sg_name        = optional(string)
-    iam_role_name  = optional(string)
-    key_pair_name  = optional(string)
-    tags           = optional(map(string), {})
+    user_data_file              = optional(string)
+    username                    = optional(string)
+    create_security_group       = optional(bool, true)
+    existing_security_group_ids = optional(list(string), [])
+    server_name                 = optional(string)
+    sg_name                     = optional(string)
+    iam_role_name               = optional(string)
+    key_pair_name               = optional(string)
+    tags                        = optional(map(string), {})
   }))
   default = {}
 

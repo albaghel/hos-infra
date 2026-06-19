@@ -75,6 +75,22 @@ ssh -i ./custom-web-key.pem ubuntu@<PUBLIC_IP_FROM_OUTPUT>
 
 Welcome! You can use this repository to easily request an EC2 instance. You do not need to know how to write Terraform.
 
+### Local Prerequisites
+
+Before you begin, ensure you have the necessary tools installed and configured:
+
+1. **Install Terraform**: Download and install [Terraform](https://developer.hashicorp.com/terraform/install).
+2. **Install AWS CLI**: Download and install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+3. **Configure AWS Credentials**: Log in using your enterprise SSO or run `aws configure`.
+
+Verify your installation:
+```bash
+terraform version
+aws sts get-caller-identity
+```
+
+### Deployment Workflow
+
 **To request a new instance:**
 
 1. Open the file: `tfvars/inputs.auto.tfvars`
